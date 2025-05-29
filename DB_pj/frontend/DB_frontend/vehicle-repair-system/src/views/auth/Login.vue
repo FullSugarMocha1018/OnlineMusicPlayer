@@ -26,7 +26,40 @@
       
       <div class="form-section">
         <h2>用户登录</h2>
-        <AuthForm :isRegister="false" @login="handleLogin" />
+        <div v-if="loginError" class="error-message">
+          {{ loginError }}
+        </div>
+        <form @submit.prevent="handleLogin">
+          <div class="form-group">
+            <label for="username">用户名</label>
+            <input 
+              type="text" 
+              id="username" 
+              v-model="loginData.username" 
+              required
+              placeholder="请输入用户名"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">密码</label>
+            <input 
+              type="password" 
+              id="password" 
+              v-model="loginData.password" 
+              required
+              placeholder="请输入密码"
+            />
+          </div>
+
+          <button type="submit" class="submit-btn" :disabled="loading">
+            {{ loading ? '登录中...' : '登录' }}
+          </button>
+          
+          <div class="register-link">
+            还没有账户？<router-link to="/register">立即注册</router-link>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -34,20 +67,32 @@
 
 <script>
 import AuthHeader from '@/components/auth/AuthHeader.vue';
-import AuthForm from '@/components/auth/AuthForm.vue';
 import authService from '@/services/authService';
 
 export default {
   components: {
-    AuthHeader,
-    AuthForm
+    AuthHeader
+  },
+  data() {
+    return {
+      loginData: {
+        username: '',
+        password: ''
+      },
+      loading: false,
+      loginError: ''
+    };
   },
   methods: {
-    async handleLogin(credentials) {
+    async handleLogin() {
+      this.loading = true;
+      this.loginError = '';
+      
       try {
-        const user = await authService.login(credentials);
+        await authService.login(this.loginData);
         
         // 根据用户角色重定向到不同页面
+        const user = authService.getCurrentUser();
         if (user.role === 'ADMIN') {
           this.$router.push('/admin/dashboard');
         } else if (user.role === 'MECHANIC') {
@@ -56,8 +101,10 @@ export default {
           this.$router.push('/user/dashboard');
         }
       } catch (error) {
+        this.loginError = error.message || '登录失败，请检查用户名和密码';
         console.error('登录失败:', error);
-        throw error;
+      } finally {
+        this.loading = false;
       }
     }
   }
@@ -139,6 +186,79 @@ export default {
 .form-section h2 {
   color: #2c3e50;
   margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+input:focus {
+  border-color: #42b983;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.2);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #3aa976;
+}
+
+.submit-btn:disabled {
+  background-color: #a0d9bb;
+  cursor: not-allowed;
+}
+
+.register-link {
+  margin-top: 15px;
+  text-align: center;
+  color: #666;
+}
+
+.register-link a {
+  color: #42b983;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #ffebee;
+  color: #f44336;
+  border-radius: 4px;
   text-align: center;
 }
 

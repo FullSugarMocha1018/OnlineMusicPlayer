@@ -8,12 +8,12 @@ const apiClient = axios.create({
   },
 });
 
-// 请求拦截器 - 添加认证头
+// 请求拦截器 - 更新为Bearer Token认证
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Basic ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器 - 处理错误
+// 响应拦截器 - 处理错误（保持不变）
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

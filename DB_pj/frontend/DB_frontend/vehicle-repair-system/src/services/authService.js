@@ -11,25 +11,28 @@ export default {
     }
   },
 
-  // 用户登录
+  // 用户登录 - JWT认证
   async login(credentials) {
     try {
-      // 创建Basic认证token
-      const token = btoa(`${credentials.username}:${credentials.password}`);
+      // 发送登录请求到API端点
+      const response = await api.post('/api/auth/login', credentials);
+      const { accessToken, tokenType, userId, username, role } = response.data;
       
       // 存储token到localStorage
-      localStorage.setItem('token', token);
-      
-      // 获取用户信息（假设用户ID为1）
-      const userResponse = await api.get('/api/users/1');
-      const user = userResponse.data;
+      localStorage.setItem('token', accessToken);
       
       // 存储用户信息
+      const user = {
+        id: userId,
+        username: username,
+        role: role
+      };
       localStorage.setItem('user', JSON.stringify(user));
       
       return user;
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       throw new Error(error.response?.data?.message || '登录失败');
     }
   },

@@ -4,6 +4,9 @@
     <div class="auth-container">
       <div class="form-section">
         <h2>用户注册</h2>
+        <div v-if="registerError" class="error-message">
+          {{ registerError }}
+        </div>
         <AuthForm :isRegister="true" @register="handleRegister" />
         <div class="login-link">
           已有账户？<router-link to="/login">立即登录</router-link>
@@ -57,14 +60,40 @@ export default {
     AuthHeader,
     AuthForm
   },
+  data() {
+    return {
+      registerError: ''
+    };
+  },
   methods: {
     async handleRegister(userData) {
+      this.registerError = '';
+      
       try {
+        // 1. 注册新用户
         await authService.register(userData);
-        this.$router.push('/login');
+        
+        // 2. 使用新注册的账户自动登录
+        const credentials = {
+          username: userData.username,
+          password: userData.password
+        };
+        
+        await authService.login(credentials);
+        
+        // 3. 根据用户角色重定向
+        const user = authService.getCurrentUser();
+        if (user.role === 'ADMIN') {
+          this.$router.push('/admin/dashboard');
+        } else if (user.role === 'MECHANIC') {
+          this.$router.push('/mechanic/dashboard');
+        } else {
+          this.$router.push('/user/dashboard');
+        }
+        
       } catch (error) {
+        this.registerError = error.message || '注册失败，请重试';
         console.error('注册失败:', error);
-        throw error;
       }
     }
   }
@@ -155,6 +184,15 @@ export default {
   margin: 0;
   opacity: 0.9;
   font-size: 0.95rem;
+}
+
+.error-message {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #ffebee;
+  color: #f44336;
+  border-radius: 4px;
+  text-align: center;
 }
 
 @media (max-width: 900px) {
